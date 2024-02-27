@@ -1,0 +1,21 @@
+<%- include("partials/header"); -%>
+<div class="container-home centered">
+    <div class="container-fluid py-5">
+        <div class="key-icon">
+        <i class="bi bi-key-fill key-icon"></i>
+        </div>
+        <p class="fs-1">You've Discovered My Secret</p>
+        <p class="secret-text">Dont Keep'your Secrets, Share them anonymously</p>
+        
+        <form action="/submit" method="post">
+            <div class="input-group mb-3">
+                <input type="text" class="form-control centered" name="secret" placeholder="What's Your Secret?"/>
+            </div>
+            <a class="btn btn-light" href="/" role="button">Logout</a>
+            <button type="submit" class="btn btn-dark">Submit</button>
+        </form>
+    </div>
+
+</div>
+
+<%- include("partials/footer"); -%>

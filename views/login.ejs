@@ -1,0 +1,26 @@
+<%- include("partials/header"); -%>
+<div class="container-home mt-5">
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-8">
+            <div class="card ms-5">
+                <div class="card-body">
+                <h5 class="card-title">Login</h5>
+                <!-- Makes Post Request to Login Route -->
+                <form action="/login" method="post">
+                <label for="email" class="form-label">Email </label>
+                <input type="email" class="form-control mb-2" name="username"/>
+                <label for="password" class="form-label">Password </label>
+                <input type="password" class="form-control mb-2" name="password"/>
+                <button class="btn btn-dark" type="submit">Login</button>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<%- include("partials/footer"); -%>
