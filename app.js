@@ -1,13 +1,40 @@
+require('dotenv').config()
 const express = require("express")
 const ejs = require("ejs")
 const bodyParser = require("body-parser")
 const mongoose = require("mongoose")
+const crypto = require("crypto")
 const app = express()
 const port = 3000
 
 app.set("view engine","ejs")
 app.use(bodyParser.urlencoded({extended:true}))
 app.use(express.static("static"))
+
+//Create Crypto Function  Here
+const IV_LENGTH = 16; //Initisalation Vector for AES-256-CBC
+//the secret key of user desired consists 32characters i.e combination of alphabets and numbers like below
+//secret key="a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+const secret_key = Buffer.from(process.env.SECRET,'utf-8') //here SECRET is a env varible of 32byte length situated in .env file
+const aesKey = secret_key.slice(0,32)
+
+function encrypt(text) {
+    const iv = crypto.randomBytes(IV_LENGTH)
+    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(aesKey), iv)
+    let encrypted = cipher.update(text)
+    encrypted = Buffer.concat([encrypted, cipher.final()])
+    return iv.toString('hex') + ':' + encrypted.toString('hex')
+  }
+  
+  function decrypt(text) {
+    const textParts = text.split(':')
+    const iv = Buffer.from(textParts[0], 'hex')
+    const encryptedText = Buffer.from(textParts[1], 'hex')
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(aesKey), iv)
+    let decrypted = decipher.update(encryptedText)
+    decrypted = Buffer.concat([decrypted, decipher.final()])
+    return decrypted.toString()
+  }
 
 //Database connection
 main().catch(err=>console.log(err))
@@ -32,7 +59,7 @@ app.route("/register")
 })
 .post((req,res)=>{
    let name=req.body.username
-   let userPassword = req.body.password
+   let encryptedPassword = encrypt(req.body.password)
    //
    try {
     User.find({email:name}).then(results=>{
@@ -40,7 +67,7 @@ app.route("/register")
         {
             const user = new User({
                 email:name,
-                password:userPassword
+                password:encryptedPassword
             })
             user.save()
             res.redirect("/")
@@ -68,7 +95,8 @@ app.route("/login")
     let userPassword = req.body.password
 
     User.findOne({email:userName}).then(results=>{
-        if(results.password===userPassword){
+        let decryptedPassword = decrypt(results.password)
+        if(decryptedPassword===userPassword){
             res.redirect("/secrets")
         }
         else{
