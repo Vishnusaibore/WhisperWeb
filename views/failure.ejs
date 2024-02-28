@@ -1,0 +1,18 @@
+<%- include("partials/header"); -%>
+<div class="p-5 mb-4 bg-body-tertiary rounded-3">
+    <div class="container-fluid py-5 centered">
+    <div class="alert alert-danger" role="alert">
+      <i class="bi bi-exclamation-triangle" style="font-size: 50px;"></i>
+      <h3 class="fw-bold"><%=errorType%></h3>
+      <p class="centered"><%= error_msg%></p>
+      <% if(buttonVal==="Login"){%>
+        <a href="/login" class="btn btn-dark" role="button"><%=buttonVal%></a>
+      <%}else if(buttonVal==="Try Again"){%>
+        <a href="/login" class="btn btn-dark" role="button"><%=buttonVal%></a>
+      <%}else{%>
+        <a href="/register" class="btn btn-dark" role="button"><%=buttonVal%></a>
+      <%}%>
+      </div>
+    </div>
+  </div>
+<%- include("partials/footer"); -%>
