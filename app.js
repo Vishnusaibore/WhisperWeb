@@ -11,6 +11,8 @@ const cookieParser = require('cookie-parser')
 const passport = require('passport')
 const passportLocalMongoose = require('passport-local-mongoose')
 const LocalStrategy = require('passport-local').Strategy
+const GoogleStrategy = require('passport-google-oauth20').Strategy
+const findOrCreate = require('mongoose-findorcreate')
 
 const app = express()
 const port = 3000
@@ -43,21 +45,49 @@ async function main(){
     //user Schema
     const userSchema= new mongoose.Schema({
         email:String,
-        password:String
+        password:String,
+        secret:String
     })
 
     userSchema.plugin(passportLocalMongoose)
+    userSchema.plugin(findOrCreate)
 
     const User = mongoose.model("User",userSchema)
 
-    passport.use(new LocalStrategy(User.authenticate()));
-    passport.serializeUser(User.serializeUser());
-    passport.deserializeUser(User.deserializeUser());
+    passport.use(new LocalStrategy(User.authenticate()))
+    passport.serializeUser(User.serializeUser())
+    passport.deserializeUser(User.deserializeUser())
 
+//Here we are implentin google oAuth2.0
+passport.use(new GoogleStrategy({
+    clientID:process.env.CLIENT_ID,
+    clientSecret:process.env.CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/secrets"
+  },
+  function(accessToken, refreshToken, profile,cb) {
+    const email = profile.emails[0].value // Taking the first email
+    //
+        User.findOrCreate({username:email }, function (err, user) {
+          return cb(err, user) //callback function which sends data back to callback url
+        })
+    //
+  }
+))
+//
 //Home Route
 app.get("/",(req,res)=>{
     res.render("home")
 })
+//google Authentication
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile','email'] }))
+//Google callback api
+app.get('/auth/google/secrets', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/secrets');
+  })
 
 //Register Route
 app.route("/register")
@@ -78,7 +108,7 @@ app.route("/register")
     else{
         passport.authenticate("local")(req,res,()=>{
             // console.log("Registerd")
-            res.redirect("/secrets")
+            res.redirect("/login")
         })
     }
    })
@@ -175,15 +205,27 @@ app.get('/logout',(req, res)=>{
 
 
 app.get("/secrets",(req,res)=>{
+    User.find({"secret":{$ne:null}}).then(results=>{
+        res.render("secrets",{userwithSecrets:results})
+    }).catch(err=>console.log(err))
+})
+
+app.get("/submit",(req,res)=>{
     if(req.isAuthenticated()){
-        res.render("secrets")
+        res.render("submit")
     }else{
         res.redirect("/login")
     }
 })
 
-app.get("/submit",(req,res)=>{
-    res.render("submit")
+app.post("/submit",(req,res)=>{
+    let submitedSecret = req.body.secret
+    User.findById(req.user.id).then(results=>{
+        results.secret = submitedSecret
+        results.save()
+        res.redirect("/secrets")
+    }).catch(err=>{console.log(err)
+    res.redirect("/")})
 })
 
 app.get("/failure",(req,res)=>{
